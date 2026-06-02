@@ -1,8 +1,8 @@
 package com.common.enums;
 
-public enum ErrorCodeEnum {
+public enum CodeEnum {
     // 成功
-    OK(0, "success"),
+    OK(200, "success"),
 
     // 通用错误
     COMMON_ERROR(100, "通用错误"),
@@ -24,7 +24,7 @@ public enum ErrorCodeEnum {
     private final int statusCode;
     private final String msg;
 
-    ErrorCodeEnum(int statusCode, String msg) {
+    CodeEnum(int statusCode, String msg) {
             this.statusCode = statusCode;
             this.msg = msg;
     }
@@ -38,8 +38,8 @@ public enum ErrorCodeEnum {
     }
 
     // 根据 code 查找对应的 ErrorCode
-    public static ErrorCodeEnum fromCode(int statusCode) {
-        for (ErrorCodeEnum errorCode : ErrorCodeEnum.values()) {
+    public static CodeEnum fromCode(int statusCode) {
+        for (CodeEnum errorCode : CodeEnum.values()) {
             if (errorCode.statusCode == statusCode) {
                 return errorCode;
             }

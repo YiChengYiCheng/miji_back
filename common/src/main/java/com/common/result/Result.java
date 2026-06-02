@@ -1,6 +1,6 @@
 package com.common.result;
 
-import com.common.enums.ErrorCodeEnum;
+import com.common.enums.CodeEnum;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -16,8 +16,8 @@ public class Result<T> implements Serializable {
     public static Result success(Object data) {
         Result result = new Result();
         result.setData(data);
-        result.setStatus(ErrorCodeEnum.OK.getStatusCode());
-        result.setMsg(ErrorCodeEnum.OK.getMsg());
+        result.setStatus(CodeEnum.OK.getStatusCode());
+        result.setMsg(CodeEnum.OK.getMsg());
         return result;
     }
     public static Result success(Object data,Integer errorCode,String msg) {
