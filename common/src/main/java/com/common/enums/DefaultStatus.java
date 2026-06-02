@@ -1,6 +1,6 @@
 package com.common.enums;
 
-public class Status {
+public class DefaultStatus {
 
     // 占位默认值
     public static final Integer DEFAULT_ID = 1;
@@ -29,5 +29,6 @@ public class Status {
     public static final String DEFAULT_PASSWORD = "123456";
     //初始状态
     public static final Integer DEFAULT_STATUS = 1;
+    public static final String USER_PRE = "user_";
 
 }

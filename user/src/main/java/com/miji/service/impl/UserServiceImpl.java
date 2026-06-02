@@ -4,11 +4,12 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.common.DO.UserDO;
 import com.common.QO.user.LoginQO;
+import com.common.QO.user.RegisterQO;
 import com.common.QO.user.RefreshTokenQO;
 import com.common.VO.user.TokenVO;
 import com.common.VO.user.UserVO;
 import com.common.enums.CodeEnum;
-import com.common.enums.Status;
+import com.common.enums.DefaultStatus;
 import com.common.exception.CustomException;
 import com.common.result.Result;
 import com.miji.mapper.UserMapper;
@@ -23,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletResponse;
+import java.time.LocalDateTime;
 
 @Service
 @Slf4j
@@ -51,9 +53,47 @@ public class UserServiceImpl implements UserService {
             log.info("登录失败,密码错误！-->{}", userDO);
             return Result.fail(CodeEnum.COMMON_ERROR.getStatusCode(), "登录失败，请重新登录！");
         }
-        if (!Status.DEFAULT_STATUS.equals(userDO.getStatus())) {
+        if (!DefaultStatus.DEFAULT_STATUS.equals(userDO.getStatus())) {
             log.info("登录失败,用户状态异常！-->{}", userDO);
             return Result.fail(CodeEnum.COMMON_ERROR.getStatusCode(), "用户状态异常，请联系管理员！");
+        }
+
+        UserVO userVO = new UserVO();
+        userDO.setPassword(null);
+        userVO.setUserInfo(userDO);
+        userVO.setAccessToken(jwtUtil.createAccessToken(userDO.getId(), userDO.getAccount()));
+        userVO.setRefreshToken(jwtUtil.createRefreshToken(userDO.getId(), userDO.getAccount()));
+        userVO.setExpiresIn(jwtUtil.getAccessTokenExpiresIn());
+
+        return Result.success(userVO);
+    }
+
+    @Override
+    public Result register(RegisterQO qo) {
+        if (StringUtils.isEmpty(qo.getAccount()) || StringUtils.isEmpty(qo.getPassword()) || StringUtils.isEmpty(qo.getCode())) {
+            throw new CustomException(HttpServletResponse.SC_BAD_REQUEST, "用户账号、密码和验证码不能为空");
+        }
+
+        Long count = userMapper.selectCount(new LambdaQueryWrapper<UserDO>()
+                .eq(UserDO::getAccount, qo.getAccount()));
+        if (count != null && count > 0) {
+            return Result.fail(CodeEnum.COMMON_ERROR.getStatusCode(), "注册失败，该账号已存在！");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        UserDO userDO = new UserDO();
+        userDO.setAccount(qo.getAccount());
+        userDO.setPassword(passwordEncoder.encode(qo.getPassword()));
+        userDO.setNickname(DefaultStatus.USER_PRE+qo.getAccount());
+        userDO.setFansCount(DefaultStatus.NUM_ZERO);
+        userDO.setFollowCount(DefaultStatus.NUM_ZERO);
+        userDO.setStatus(DefaultStatus.DEFAULT_STATUS);
+        userDO.setCreateTime(now);
+        userDO.setUpdateTime(now);
+
+        int insert = userMapper.insert(userDO);
+        if (insert <= 0) {
+            return Result.fail(CodeEnum.CUSTOM_DATABASE_ERROR_INSERT_FAIL.getStatusCode(), "注册失败，请稍后重试！");
         }
 
         UserVO userVO = new UserVO();
@@ -75,7 +115,7 @@ public class UserServiceImpl implements UserService {
             }
 
             UserDO userDO = userMapper.selectById(jwtUtil.getUserId(claims));
-            if (userDO == null || !Status.DEFAULT_STATUS.equals(userDO.getStatus())) {
+            if (userDO == null || !DefaultStatus.DEFAULT_STATUS.equals(userDO.getStatus())) {
                 return Result.fail(CodeEnum.COMMON_ERROR.getStatusCode(), "用户不存在或状态异常！");
             }
 

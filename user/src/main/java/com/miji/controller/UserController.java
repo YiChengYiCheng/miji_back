@@ -1,6 +1,7 @@
 package com.miji.controller;
 
 import com.common.QO.user.LoginQO;
+import com.common.QO.user.RegisterQO;
 import com.common.QO.user.RefreshTokenQO;
 import com.common.result.Result;
 import com.miji.service.UserService;
@@ -22,6 +23,11 @@ public class UserController {
     @PostMapping("/login")
     public Result login(@RequestBody @Valid LoginQO qo){
         return userService.login(qo);
+    }
+
+    @PostMapping("/register")
+    public Result register(@RequestBody @Valid RegisterQO qo) {
+        return userService.register(qo);
     }
 
     @PostMapping("/refresh")
