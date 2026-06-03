@@ -1,4 +1,4 @@
-package com.miji.service;
+package com.miji.user.service;
 
 import com.common.QO.user.LoginQO;
 import com.common.QO.user.RegisterQO;

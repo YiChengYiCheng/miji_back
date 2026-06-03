@@ -1,4 +1,4 @@
-package com.miji.service.impl;
+package com.miji.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
@@ -12,9 +12,9 @@ import com.common.enums.CodeEnum;
 import com.common.enums.DefaultStatus;
 import com.common.exception.CustomException;
 import com.common.result.Result;
-import com.miji.mapper.UserMapper;
-import com.miji.service.UserService;
-import com.miji.util.JwtUtil;
+import com.miji.user.mapper.UserMapper;
+import com.miji.user.service.UserService;
+import com.miji.user.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import lombok.extern.slf4j.Slf4j;

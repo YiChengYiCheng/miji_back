@@ -1,4 +1,4 @@
-package com.miji.mapper;
+package com.miji.user.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.common.DO.UserDO;

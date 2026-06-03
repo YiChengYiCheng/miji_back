@@ -1,10 +1,10 @@
-package com.miji.controller;
+package com.miji.user.controller;
 
 import com.common.QO.user.LoginQO;
 import com.common.QO.user.RegisterQO;
 import com.common.QO.user.RefreshTokenQO;
 import com.common.result.Result;
-import com.miji.service.UserService;
+import com.miji.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

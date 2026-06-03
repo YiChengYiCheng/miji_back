@@ -1,4 +1,4 @@
-package com.miji.util;
+package com.miji.user.util;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -47,6 +47,10 @@ public class JwtUtil {
         return REFRESH_TOKEN.equals(claims.get(TOKEN_TYPE, String.class));
     }
 
+    public boolean isAccessToken(Claims claims) {
+        return ACCESS_TOKEN.equals(claims.get(TOKEN_TYPE, String.class));
+    }
+
     public Long getAccessTokenExpiresIn() {
         return accessTokenExpiration / 1000;
     }
@@ -76,4 +80,3 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 }
-
