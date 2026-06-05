@@ -121,7 +121,6 @@ public class UserServiceImpl implements UserService {
 
             TokenVO tokenVO = new TokenVO();
             tokenVO.setAccessToken(jwtUtil.createAccessToken(userDO.getId(), userDO.getAccount()));
-            tokenVO.setRefreshToken(jwtUtil.createRefreshToken(userDO.getId(), userDO.getAccount()));
             tokenVO.setExpiresIn(jwtUtil.getAccessTokenExpiresIn());
             return Result.success(tokenVO);
         } catch (JwtException | IllegalArgumentException e) {
