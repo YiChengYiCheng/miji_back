@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -53,6 +54,11 @@ public class NoteDO extends BaseDO{
      * 评论数
      */
     private Integer commentCount;
+
+    /**
+     * 推荐分数
+     */
+    private BigDecimal score;
 
 
 }

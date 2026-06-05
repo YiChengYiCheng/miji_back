@@ -1,6 +1,8 @@
 package com.common.enums;
 
-public class DefaultStatus {
+import java.math.BigDecimal;
+
+public class DefaultValue {
 
     // 占位默认值
     public static final Integer DEFAULT_ID = 1;
@@ -30,5 +32,10 @@ public class DefaultStatus {
     //初始状态
     public static final Integer DEFAULT_STATUS = 1;
     public static final String USER_PRE = "user_";
+
+    public static final BigDecimal VIEW_SCORE_WEIGHT = BigDecimal.valueOf(0.2);
+    public static final BigDecimal LIKE_SCORE_WEIGHT = BigDecimal.valueOf(0.4);
+    public static final BigDecimal COLLECT_SCORE_WEIGHT = BigDecimal.valueOf(0.3);
+    public static final BigDecimal COMMENT_SCORE_WEIGHT = BigDecimal.valueOf(0.1);
 
 }

@@ -9,7 +9,7 @@ import com.common.QO.user.RefreshTokenQO;
 import com.common.VO.user.TokenVO;
 import com.common.VO.user.UserVO;
 import com.common.enums.CodeEnum;
-import com.common.enums.DefaultStatus;
+import com.common.enums.DefaultValue;
 import com.common.exception.CustomException;
 import com.common.result.Result;
 import com.miji.user.mapper.UserMapper;
@@ -53,7 +53,7 @@ public class UserServiceImpl implements UserService {
             log.info("登录失败,密码错误！-->{}", userDO);
             return Result.fail(CodeEnum.COMMON_ERROR.getStatusCode(), "登录失败，请重新登录！");
         }
-        if (!DefaultStatus.DEFAULT_STATUS.equals(userDO.getStatus())) {
+        if (!DefaultValue.DEFAULT_STATUS.equals(userDO.getStatus())) {
             log.info("登录失败,用户状态异常！-->{}", userDO);
             return Result.fail(CodeEnum.COMMON_ERROR.getStatusCode(), "用户状态异常，请联系管理员！");
         }
@@ -84,10 +84,10 @@ public class UserServiceImpl implements UserService {
         UserDO userDO = new UserDO();
         userDO.setAccount(qo.getAccount());
         userDO.setPassword(passwordEncoder.encode(qo.getPassword()));
-        userDO.setNickname(DefaultStatus.USER_PRE+qo.getAccount());
-        userDO.setFansCount(DefaultStatus.NUM_ZERO);
-        userDO.setFollowCount(DefaultStatus.NUM_ZERO);
-        userDO.setStatus(DefaultStatus.DEFAULT_STATUS);
+        userDO.setNickname(DefaultValue.USER_PRE+qo.getAccount());
+        userDO.setFansCount(DefaultValue.NUM_ZERO);
+        userDO.setFollowCount(DefaultValue.NUM_ZERO);
+        userDO.setStatus(DefaultValue.DEFAULT_STATUS);
         userDO.setCreateTime(now);
         userDO.setUpdateTime(now);
 
@@ -115,7 +115,7 @@ public class UserServiceImpl implements UserService {
             }
 
             UserDO userDO = userMapper.selectById(jwtUtil.getUserId(claims));
-            if (userDO == null || !DefaultStatus.DEFAULT_STATUS.equals(userDO.getStatus())) {
+            if (userDO == null || !DefaultValue.DEFAULT_STATUS.equals(userDO.getStatus())) {
                 return Result.fail(CodeEnum.COMMON_ERROR.getStatusCode(), "用户不存在或状态异常！");
             }
 

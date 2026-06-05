@@ -1,6 +1,11 @@
 server:
   port: 8888
 
+miji:
+  upload:
+    path: ${MIJI_UPLOAD_PATH:/root/nginx/html/images}
+    url-prefix: ${MIJI_UPLOAD_URL_PREFIX:http://124.222.99.179:80/images}
+
 spring:
   datasource:
     url: jdbc:mysql://124.222.99.179:3306/MIJI?serverTimezone=GMT%2B8&characterEncoding=utf-8&useSSL=false

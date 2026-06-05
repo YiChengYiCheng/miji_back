@@ -1,0 +1,30 @@
+package com.common.QO.note;
+
+import lombok.Data;
+
+import javax.validation.constraints.NotNull;
+import java.io.Serializable;
+
+@Data
+public class UpdateNoteQO implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    @NotNull(message = "id cannot be null")
+    private Long id;
+
+    private Long userId;
+
+    private String title;
+
+    private String content;
+
+    private String cover;
+
+    private Integer viewCount;
+
+    private Integer likeCount;
+
+    private Integer collectCount;
+
+    private Integer commentCount;
+}
