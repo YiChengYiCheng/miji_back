@@ -4,6 +4,7 @@ import lombok.Data;
 
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
+import java.util.List;
 
 @Data
 public class UpdateNoteQO implements Serializable {
@@ -12,13 +13,13 @@ public class UpdateNoteQO implements Serializable {
     @NotNull(message = "id cannot be null")
     private Long id;
 
-    private Long userId;
-
     private String title;
 
     private String content;
 
     private String cover;
+
+    private List<String> images;
 
     private Integer viewCount;
 

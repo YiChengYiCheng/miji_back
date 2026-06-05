@@ -10,11 +10,11 @@ import com.common.result.Result;
 import javax.validation.Valid;
 
 public interface NoteService {
-    Result add(@Valid AddNoteQO qo);
+    Result add(@Valid AddNoteQO qo, Long currentUserId);
 
-    Result delete(@Valid DeleteNoteQO qo);
+    Result delete(@Valid DeleteNoteQO qo, Long currentUserId);
 
-    Result update(@Valid UpdateNoteQO qo);
+    Result update(@Valid UpdateNoteQO qo, Long currentUserId);
 
     Result detail(@Valid NoteDetailQO qo);
 

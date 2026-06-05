@@ -2,7 +2,7 @@ package com.common.QO.note;
 
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotBlank;
 import java.io.Serializable;
 import java.util.List;
 
@@ -10,13 +10,10 @@ import java.util.List;
 public class AddNoteQO implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    @NotNull(message = "用户id不能为空")
-    private Long userId;
-
-    @NotNull(message = "标题不能为空")
+    @NotBlank(message = "标题不能为空")
     private String title;
 
-    @NotNull(message = "内容不能为空")
+    @NotBlank(message = "内容不能为空")
     private String content;
 
     private String cover;

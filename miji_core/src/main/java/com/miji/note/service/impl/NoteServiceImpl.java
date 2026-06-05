@@ -9,35 +9,41 @@ import com.common.QO.note.DeleteNoteQO;
 import com.common.QO.note.NoteDetailQO;
 import com.common.QO.note.NoteListQO;
 import com.common.QO.note.UpdateNoteQO;
+import com.common.VO.note.NoteVO;
 import com.common.enums.CodeEnum;
 import com.common.enums.DefaultValue;
+import com.common.exception.CustomException;
 import com.common.result.Result;
 import com.miji.note.mapper.NoteImageMapper;
 import com.miji.note.mapper.NoteMapper;
 import com.miji.note.service.NoteService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class NoteServiceImpl implements NoteService {
 
-    @Autowired
-    private NoteMapper noteMapper;
+    private final NoteMapper noteMapper;
 
-    @Autowired
-    private NoteImageMapper noteImageMapper;
+    private final NoteImageMapper noteImageMapper;
+
+    public NoteServiceImpl(NoteMapper noteMapper, NoteImageMapper noteImageMapper) {
+        this.noteMapper = noteMapper;
+        this.noteImageMapper = noteImageMapper;
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Result add(AddNoteQO qo) {
+    public Result add(AddNoteQO qo, Long currentUserId) {
         LocalDateTime now = LocalDateTime.now();
         NoteDO noteDO = new NoteDO();
-        noteDO.setUserId(qo.getUserId());
+        noteDO.setUserId(currentUserId);
         noteDO.setTitle(qo.getTitle());
         noteDO.setContent(qo.getContent());
         noteDO.setCover(qo.getCover());
@@ -59,24 +65,21 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public Result delete(DeleteNoteQO qo) {
-        int delete = noteMapper.deleteById(qo.getId());
-        if (delete <= 0) {
+    public Result delete(DeleteNoteQO qo, Long currentUserId) {
+        NoteDO noteDO = getOwnedNote(qo.getId(), currentUserId);
+        noteDO.setStatus(DefaultValue.NUM_ZERO);
+        noteDO.setUpdateTime(LocalDateTime.now());
+        int update = noteMapper.updateById(noteDO);
+        if (update <= 0) {
             return Result.fail(CodeEnum.CUSTOM_DATABASE_ERROR_UPDATE_FAIL.getStatusCode(), "note delete fail");
         }
         return Result.success(true);
     }
 
     @Override
-    public Result update(UpdateNoteQO qo) {
-        NoteDO noteDO = noteMapper.selectById(qo.getId());
-        if (noteDO == null) {
-            return Result.fail(CodeEnum.COMMON_ERROR.getStatusCode(), "note not found");
-        }
-
-        if (qo.getUserId() != null) {
-            noteDO.setUserId(qo.getUserId());
-        }
+    @Transactional(rollbackFor = Exception.class)
+    public Result update(UpdateNoteQO qo, Long currentUserId) {
+        NoteDO noteDO = getOwnedNote(qo.getId(), currentUserId);
         if (qo.getTitle() != null) {
             noteDO.setTitle(qo.getTitle());
         }
@@ -105,16 +108,21 @@ public class NoteServiceImpl implements NoteService {
         if (update <= 0) {
             return Result.fail(CodeEnum.CUSTOM_DATABASE_ERROR_UPDATE_FAIL.getStatusCode(), "note update fail");
         }
-        return Result.success(noteDO);
+        if (qo.getImages() != null) {
+            noteImageMapper.delete(new LambdaQueryWrapper<NoteImageDO>()
+                    .eq(NoteImageDO::getNoteId, noteDO.getId()));
+            saveNoteImages(noteDO.getId(), qo.getImages(), noteDO.getUpdateTime());
+        }
+        return Result.success(buildNoteVO(noteDO));
     }
 
     @Override
     public Result detail(NoteDetailQO qo) {
         NoteDO noteDO = noteMapper.selectById(qo.getId());
-        if (noteDO == null) {
+        if (noteDO == null || DefaultValue.NUM_ZERO.equals(noteDO.getStatus())) {
             return Result.fail(CodeEnum.COMMON_ERROR.getStatusCode(), "note not found");
         }
-        return Result.success(noteDO);
+        return Result.success(buildNoteVO(noteDO));
     }
 
     @Override
@@ -159,5 +167,29 @@ public class NoteServiceImpl implements NoteService {
             noteImageDO.setCreateTime(createTime);
             noteImageMapper.insert(noteImageDO);
         }
+    }
+
+    private NoteDO getOwnedNote(Long noteId, Long currentUserId) {
+        NoteDO noteDO = noteMapper.selectById(noteId);
+        if (noteDO == null || DefaultValue.NUM_ZERO.equals(noteDO.getStatus())) {
+            throw new CustomException(CodeEnum.COMMON_ERROR.getStatusCode(), "note not found");
+        }
+        if (currentUserId == null || !currentUserId.equals(noteDO.getUserId())) {
+            throw new CustomException(HttpServletResponse.SC_FORBIDDEN, "no permission");
+        }
+        return noteDO;
+    }
+
+    private NoteVO buildNoteVO(NoteDO noteDO) {
+        NoteVO noteVO = new NoteVO();
+        noteVO.setNoteInfo(noteDO);
+        List<String> images = noteImageMapper.selectList(new LambdaQueryWrapper<NoteImageDO>()
+                        .eq(NoteImageDO::getNoteId, noteDO.getId())
+                        .orderByAsc(NoteImageDO::getSortNum))
+                .stream()
+                .map(NoteImageDO::getImageUrl)
+                .collect(Collectors.toList());
+        noteVO.setImages(images);
+        return noteVO;
     }
 }

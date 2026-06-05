@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 @RestController
@@ -23,18 +24,18 @@ public class NoteController {
     private NoteService noteService;
 
     @PostMapping("/add")
-    public Result add(@RequestBody @Valid AddNoteQO qo) {
-        return noteService.add(qo);
+    public Result add(@RequestBody @Valid AddNoteQO qo, HttpServletRequest request) {
+        return noteService.add(qo, getUserId(request));
     }
 
     @PostMapping("/delete")
-    public Result delete(@RequestBody @Valid DeleteNoteQO qo) {
-        return noteService.delete(qo);
+    public Result delete(@RequestBody @Valid DeleteNoteQO qo, HttpServletRequest request) {
+        return noteService.delete(qo, getUserId(request));
     }
 
     @PostMapping("/update")
-    public Result update(@RequestBody @Valid UpdateNoteQO qo) {
-        return noteService.update(qo);
+    public Result update(@RequestBody @Valid UpdateNoteQO qo, HttpServletRequest request) {
+        return noteService.update(qo, getUserId(request));
     }
 
     @PostMapping("/detail")
@@ -45,5 +46,9 @@ public class NoteController {
     @PostMapping("/list")
     public Result list(@RequestBody(required = false) NoteListQO qo) {
         return noteService.list(qo);
+    }
+
+    private Long getUserId(HttpServletRequest request) {
+        return (Long) request.getAttribute("userId");
     }
 }
