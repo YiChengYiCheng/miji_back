@@ -3,7 +3,7 @@ package com.miji.interceptor;
 import com.common.enums.CodeEnum;
 import com.common.result.Result;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.miji.user.util.JwtUtil;
+import com.miji.core.user.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import org.springframework.beans.factory.annotation.Autowired;
