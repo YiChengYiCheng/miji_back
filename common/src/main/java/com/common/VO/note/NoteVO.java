@@ -12,5 +12,9 @@ public class NoteVO implements Serializable {
 
     private NoteDO noteInfo;
 
+    private NoteAuthorVO author;
+
     private List<String> images;
+
+    private Boolean liked;
 }

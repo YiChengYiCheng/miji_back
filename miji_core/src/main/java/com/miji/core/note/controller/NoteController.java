@@ -39,13 +39,13 @@ public class NoteController {
     }
 
     @PostMapping("/detail")
-    public Result detail(@RequestBody @Valid NoteDetailQO qo) {
-        return noteService.detail(qo);
+    public Result detail(@RequestBody @Valid NoteDetailQO qo, HttpServletRequest request) {
+        return noteService.detail(qo, getUserId(request));
     }
 
     @PostMapping("/list")
-    public Result list(@RequestBody(required = false) NoteListQO qo) {
-        return noteService.list(qo);
+    public Result list(@RequestBody(required = false) NoteListQO qo, HttpServletRequest request) {
+        return noteService.list(qo, getUserId(request));
     }
 
     private Long getUserId(HttpServletRequest request) {

@@ -16,7 +16,7 @@ public interface NoteService {
 
     Result update(@Valid UpdateNoteQO qo, Long currentUserId);
 
-    Result detail(@Valid NoteDetailQO qo);
+    Result detail(@Valid NoteDetailQO qo, Long currentUserId);
 
-    Result list(NoteListQO qo);
+    Result list(NoteListQO qo, Long currentUserId);
 }

@@ -1,7 +1,9 @@
 package com.miji.core.note.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.common.DO.LikeRecordDO;
 import com.common.DO.NoteImageDO;
 import com.common.DO.NoteDO;
 import com.common.DO.UserDO;
@@ -20,6 +22,7 @@ import com.common.result.Result;
 import com.miji.core.note.mapper.NoteImageMapper;
 import com.miji.core.note.mapper.NoteMapper;
 import com.miji.core.note.service.NoteService;
+import com.miji.core.like.mapper.LikeRecordMapper;
 import com.miji.core.user.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,6 +34,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -43,6 +47,8 @@ public class NoteServiceImpl implements NoteService {
     private NoteImageMapper noteImageMapper;
     @Autowired
     private UserMapper userMapper;
+    @Autowired
+    private LikeRecordMapper likeRecordMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -119,20 +125,30 @@ public class NoteServiceImpl implements NoteService {
                     .eq(NoteImageDO::getNoteId, noteDO.getId()));
             saveNoteImages(noteDO.getId(), qo.getImages(), noteDO.getUpdateTime());
         }
-        return Result.success(buildNoteVO(noteDO));
+        return Result.success(buildNoteVO(noteDO, currentUserId));
     }
 
     @Override
-    public Result detail(NoteDetailQO qo) {
+    @Transactional(rollbackFor = Exception.class)
+    public Result detail(NoteDetailQO qo, Long currentUserId) {
+        int update = noteMapper.update(null, new LambdaUpdateWrapper<NoteDO>()
+                .eq(NoteDO::getId, qo.getId())
+                .eq(NoteDO::getStatus, DefaultValue.DEFAULT_STATUS)
+                .setSql("view_count = IFNULL(view_count, 0) + 1")
+                .setSql("score = IFNULL(score, 0) + " + DefaultValue.VIEW_SCORE_WEIGHT.toPlainString()));
+        if (update <= 0) {
+            return Result.fail(CodeEnum.COMMON_ERROR.getStatusCode(), "note not found");
+        }
+
         NoteDO noteDO = noteMapper.selectById(qo.getId());
         if (noteDO == null || DefaultValue.NUM_ZERO.equals(noteDO.getStatus())) {
             return Result.fail(CodeEnum.COMMON_ERROR.getStatusCode(), "note not found");
         }
-        return Result.success(buildNoteVO(noteDO));
+        return Result.success(buildNoteVO(noteDO, currentUserId));
     }
 
     @Override
-    public Result list(NoteListQO qo) {
+    public Result list(NoteListQO qo, Long currentUserId) {
         int page = qo == null || qo.getPage() == null ? DefaultValue.NUM_PAGE : qo.getPage();
         int size = qo == null || qo.getSize() == null ? DefaultValue.NUM_SIZE : qo.getSize();
 
@@ -145,7 +161,7 @@ public class NoteServiceImpl implements NoteService {
         }
 
         Page<NoteDO> notePage = noteMapper.selectPage(new Page<>(page, size), wrapper);
-        return Result.success(buildNoteListPage(notePage));
+        return Result.success(buildNoteListPage(notePage, currentUserId));
     }
 
     private BigDecimal calculateScore(NoteDO noteDO) {
@@ -188,9 +204,10 @@ public class NoteServiceImpl implements NoteService {
         return noteDO;
     }
 
-    private NoteVO buildNoteVO(NoteDO noteDO) {
+    private NoteVO buildNoteVO(NoteDO noteDO, Long currentUserId) {
         NoteVO noteVO = new NoteVO();
         noteVO.setNoteInfo(noteDO);
+        noteVO.setAuthor(buildNoteAuthorVO(userMapper.selectById(noteDO.getUserId())));
         List<String> images = noteImageMapper.selectList(new LambdaQueryWrapper<NoteImageDO>()
                         .eq(NoteImageDO::getNoteId, noteDO.getId())
                         .orderByAsc(NoteImageDO::getSortNum))
@@ -198,10 +215,11 @@ public class NoteServiceImpl implements NoteService {
                 .map(NoteImageDO::getImageUrl)
                 .collect(Collectors.toList());
         noteVO.setImages(images);
+        noteVO.setLiked(currentUserId != null && isLiked(currentUserId, noteDO.getId()));
         return noteVO;
     }
 
-    private Page<NoteListVO> buildNoteListPage(Page<NoteDO> notePage) {
+    private Page<NoteListVO> buildNoteListPage(Page<NoteDO> notePage, Long currentUserId) {
         Page<NoteListVO> result = new Page<>(notePage.getCurrent(), notePage.getSize(), notePage.getTotal());
         List<NoteDO> notes = notePage.getRecords();
         if (notes == null || notes.isEmpty()) {
@@ -215,19 +233,42 @@ public class NoteServiceImpl implements NoteService {
                 .collect(Collectors.toList());
         Map<Long, UserDO> userMap = userMapper.selectBatchIds(userIds).stream()
                 .collect(Collectors.toMap(UserDO::getId, Function.identity(), (first, second) -> first));
+        Set<Long> likedNoteIds = selectLikedNoteIds(currentUserId, notes.stream()
+                .map(NoteDO::getId)
+                .collect(Collectors.toList()));
 
         List<NoteListVO> records = notes.stream()
-                .map(note -> buildNoteListVO(note, userMap.get(note.getUserId())))
+                .map(note -> buildNoteListVO(note, userMap.get(note.getUserId()), likedNoteIds.contains(note.getId())))
                 .collect(Collectors.toList());
         result.setRecords(records);
         return result;
     }
 
-    private NoteListVO buildNoteListVO(NoteDO noteDO, UserDO userDO) {
+    private NoteListVO buildNoteListVO(NoteDO noteDO, UserDO userDO, boolean liked) {
         NoteListVO noteListVO = new NoteListVO();
         noteListVO.setNoteInfo(noteDO);
         noteListVO.setAuthor(buildNoteAuthorVO(userDO));
+        noteListVO.setLiked(liked);
         return noteListVO;
+    }
+
+    private boolean isLiked(Long currentUserId, Long noteId) {
+        Long count = likeRecordMapper.selectCount(new LambdaQueryWrapper<LikeRecordDO>()
+                .eq(LikeRecordDO::getUserId, currentUserId)
+                .eq(LikeRecordDO::getNoteId, noteId));
+        return count != null && count > 0;
+    }
+
+    private Set<Long> selectLikedNoteIds(Long currentUserId, List<Long> noteIds) {
+        if (currentUserId == null || noteIds == null || noteIds.isEmpty()) {
+            return Collections.emptySet();
+        }
+        return likeRecordMapper.selectList(new LambdaQueryWrapper<LikeRecordDO>()
+                        .eq(LikeRecordDO::getUserId, currentUserId)
+                        .in(LikeRecordDO::getNoteId, noteIds))
+                .stream()
+                .map(LikeRecordDO::getNoteId)
+                .collect(Collectors.toSet());
     }
 
     private NoteAuthorVO buildNoteAuthorVO(UserDO userDO) {
