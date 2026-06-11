@@ -5,14 +5,12 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
-import java.time.LocalDateTime;
-
 /**
  * 评论表
  */
 @Data
 @TableName("comment")
-public class CommentDO extends BaseDO{
+public class CommentDO extends BaseDO {
 
     @TableId(type = IdType.AUTO)
     private Long id;
@@ -28,14 +26,32 @@ public class CommentDO extends BaseDO{
     private Long userId;
 
     /**
-     * 父评论ID
+     * 父评论ID，一级评论为0
      */
     private Long parentId;
+
+    /**
+     * 一级评论ID，一级评论为0
+     */
+    private Long rootId;
+
+    /**
+     * 被回复用户ID
+     */
+    private Long replyUserId;
 
     /**
      * 评论内容
      */
     private String content;
 
+    /**
+     * 点赞数
+     */
+    private Integer likeCount;
 
+    /**
+     * 回复数
+     */
+    private Integer replyCount;
 }
