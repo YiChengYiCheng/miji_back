@@ -14,6 +14,7 @@ import com.common.exception.CustomException;
 import com.common.result.Result;
 import com.miji.core.follow.mapper.FollowMapper;
 import com.miji.core.follow.service.FollowService;
+import com.miji.core.notification.service.NotificationService;
 import com.miji.core.user.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
@@ -36,6 +37,8 @@ public class FollowServiceImpl implements FollowService {
     private FollowMapper followMapper;
     @Autowired
     private UserMapper userMapper;
+    @Autowired
+    private NotificationService notificationService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -67,6 +70,7 @@ public class FollowServiceImpl implements FollowService {
 
         increaseFollowCount(currentUserId);
         increaseFansCount(followUserId);
+        notificationService.notifyFollow(currentUserId, followUserId);
         return Result.success(true);
     }
 

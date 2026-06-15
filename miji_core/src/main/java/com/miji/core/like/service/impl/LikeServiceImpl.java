@@ -17,6 +17,7 @@ import com.common.result.Result;
 import com.miji.core.like.mapper.LikeRecordMapper;
 import com.miji.core.like.service.LikeService;
 import com.miji.core.note.mapper.NoteMapper;
+import com.miji.core.notification.service.NotificationService;
 import com.miji.core.user.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
@@ -40,12 +41,14 @@ public class LikeServiceImpl implements LikeService {
     private NoteMapper noteMapper;
     @Autowired
     private UserMapper userMapper;
+    @Autowired
+    private NotificationService notificationService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Result add(LikeQO qo, Long currentUserId) {
         checkLoginUser(currentUserId);
-        checkActiveNote(qo.getNoteId());
+        NoteDO noteDO = getActiveNote(qo.getNoteId());
 
         if (exists(currentUserId, qo.getNoteId())) {
             return Result.success(true);
@@ -66,6 +69,7 @@ public class LikeServiceImpl implements LikeService {
         }
 
         increaseLikeCount(qo.getNoteId());
+        notificationService.notifyLike(currentUserId, noteDO);
         return Result.success(true);
     }
 
@@ -117,11 +121,12 @@ public class LikeServiceImpl implements LikeService {
         }
     }
 
-    private void checkActiveNote(Long noteId) {
+    private NoteDO getActiveNote(Long noteId) {
         NoteDO noteDO = noteMapper.selectById(noteId);
         if (noteDO == null || DefaultValue.NUM_ZERO.equals(noteDO.getStatus())) {
             throw new CustomException(CodeEnum.COMMON_ERROR.getStatusCode(), "note not found");
         }
+        return noteDO;
     }
 
     private void increaseLikeCount(Long noteId) {

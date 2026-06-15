@@ -19,6 +19,7 @@ import com.common.result.Result;
 import com.miji.core.comment.mapper.CommentMapper;
 import com.miji.core.comment.service.CommentService;
 import com.miji.core.note.mapper.NoteMapper;
+import com.miji.core.notification.service.NotificationService;
 import com.miji.core.user.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -48,12 +49,14 @@ public class CommentServiceImpl implements CommentService {
     private NoteMapper noteMapper;
     @Autowired
     private UserMapper userMapper;
+    @Autowired
+    private NotificationService notificationService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Result add(AddCommentQO qo, Long currentUserId) {
         checkLoginUser(currentUserId);
-        checkActiveNote(qo.getNoteId());
+        NoteDO noteDO = getActiveNote(qo.getNoteId());
 
         LocalDateTime now = LocalDateTime.now();
         Long parentId = normalizeParentId(qo.getParentId());
@@ -90,6 +93,9 @@ public class CommentServiceImpl implements CommentService {
         increaseNoteCommentCount(qo.getNoteId());
         if (parent != null) {
             increaseRootReplyCount(rootId);
+            notificationService.notifyReply(currentUserId, replyUserId, noteDO, commentDO);
+        } else {
+            notificationService.notifyComment(currentUserId, noteDO, commentDO);
         }
         return Result.success(buildCommentVO(commentDO, Collections.emptyMap(), Collections.emptyMap()));
     }
@@ -329,11 +335,12 @@ public class CommentServiceImpl implements CommentService {
         return comment;
     }
 
-    private void checkActiveNote(Long noteId) {
+    private NoteDO getActiveNote(Long noteId) {
         NoteDO noteDO = noteMapper.selectById(noteId);
         if (noteDO == null || DefaultValue.NUM_ZERO.equals(noteDO.getStatus())) {
             throw new CustomException(CodeEnum.COMMON_ERROR.getStatusCode(), "note not found");
         }
+        return noteDO;
     }
 
     private void checkLoginUser(Long currentUserId) {
