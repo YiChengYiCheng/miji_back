@@ -165,7 +165,7 @@ public class NotificationServiceImpl implements NotificationService {
         if (content.length() > 50) {
             content = content.substring(0, 50);
         }
-        return type.getContent() + "\uff1a" + content;
+        return type.getContent() + "：" + content;
     }
 
     private Page<NotificationVO> buildNotificationPage(Page<NotificationDO> notificationPage) {
