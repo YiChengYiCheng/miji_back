@@ -6,6 +6,7 @@ import com.common.QO.message.DeleteMessageQO;
 import com.common.QO.message.MessageListQO;
 import com.common.QO.message.ReadConversationQO;
 import com.common.QO.message.SendMessageQO;
+import com.common.QO.message.StartConversationQO;
 import com.common.result.Result;
 import com.miji.core.message.service.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,11 @@ public class MessageController {
     @PostMapping("/send")
     public Result send(@RequestBody @Valid SendMessageQO qo, HttpServletRequest request) {
         return Result.success(messageService.send(qo, getUserId(request)));
+    }
+
+    @PostMapping("/conversation/start")
+    public Result startConversation(@RequestBody @Valid StartConversationQO qo, HttpServletRequest request) {
+        return messageService.startConversation(qo, getUserId(request));
     }
 
     @PostMapping("/conversation/list")

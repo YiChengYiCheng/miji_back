@@ -9,6 +9,7 @@ import com.common.DO.UserDO;
 import com.common.QO.message.ConversationListQO;
 import com.common.QO.message.MessageListQO;
 import com.common.QO.message.SendMessageQO;
+import com.common.QO.message.StartConversationQO;
 import com.common.VO.message.ConversationVO;
 import com.common.VO.message.MessageVO;
 import com.common.VO.note.NoteAuthorVO;
@@ -81,6 +82,25 @@ public class MessageServiceImpl implements MessageService {
         MessageVO vo = buildMessageVO(message);
         pushMessage(vo);
         return vo;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Result startConversation(StartConversationQO qo, Long currentUserId) {
+        checkLoginUser(currentUserId);
+        Long receiverUserId = qo.getReceiverUserId();
+        if (currentUserId.equals(receiverUserId)) {
+            throw new CustomException(HttpServletResponse.SC_BAD_REQUEST, "can not start conversation with yourself");
+        }
+        checkActiveUser(receiverUserId);
+
+        PrivateConversationDO conversation = getOrCreateConversation(currentUserId, receiverUserId, LocalDateTime.now());
+        if (isConversationDeleted(conversation, currentUserId)) {
+            restoreConversation(conversation.getId(), currentUserId);
+            conversation = conversationMapper.selectById(conversation.getId());
+        }
+        UserDO peerUser = userMapper.selectById(receiverUserId);
+        return Result.success(buildConversationVO(conversation, currentUserId, peerUser));
     }
 
     @Override
@@ -269,6 +289,30 @@ public class MessageServiceImpl implements MessageService {
             updateWrapper.setSql("user_b_unread_count = IFNULL(user_b_unread_count, 0) + 1")
                     .set(PrivateConversationDO::getUserADeleted, DefaultValue.NUM_ZERO)
                     .set(PrivateConversationDO::getUserBDeleted, DefaultValue.NUM_ZERO);
+        }
+        conversationMapper.update(null, updateWrapper);
+    }
+
+    private boolean isConversationDeleted(PrivateConversationDO conversation, Long currentUserId) {
+        if (currentUserId.equals(conversation.getUserAId())) {
+            return DefaultValue.NUM_ONE.equals(conversation.getUserADeleted());
+        }
+        return DefaultValue.NUM_ONE.equals(conversation.getUserBDeleted());
+    }
+
+    private void restoreConversation(Long conversationId, Long currentUserId) {
+        PrivateConversationDO conversation = conversationMapper.selectById(conversationId);
+        if (conversation == null) {
+            return;
+        }
+
+        LambdaUpdateWrapper<PrivateConversationDO> updateWrapper = new LambdaUpdateWrapper<PrivateConversationDO>()
+                .eq(PrivateConversationDO::getId, conversationId)
+                .set(PrivateConversationDO::getUpdateTime, LocalDateTime.now());
+        if (currentUserId.equals(conversation.getUserAId())) {
+            updateWrapper.set(PrivateConversationDO::getUserADeleted, DefaultValue.NUM_ZERO);
+        } else {
+            updateWrapper.set(PrivateConversationDO::getUserBDeleted, DefaultValue.NUM_ZERO);
         }
         conversationMapper.update(null, updateWrapper);
     }
