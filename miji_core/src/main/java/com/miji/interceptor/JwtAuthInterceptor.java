@@ -3,6 +3,7 @@ package com.miji.interceptor;
 import com.common.enums.CodeEnum;
 import com.common.result.Result;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.miji.annotation.OptionalLogin;
 import com.miji.core.user.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -11,6 +12,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import javax.servlet.http.HttpServletRequest;
@@ -33,8 +35,12 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
             return true;
         }
 
+        boolean optionalLogin = isOptionalLogin(handler);
         String authorization = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (authorization == null || !authorization.startsWith(BEARER_PREFIX)) {
+            if (optionalLogin) {
+                return true;
+            }
             writeUnauthorized(response, "请先登录！");
             return false;
         }
@@ -43,6 +49,9 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
         try {
             Claims claims = jwtUtil.parseToken(token);
             if (!jwtUtil.isAccessToken(claims)) {
+                if (optionalLogin) {
+                    return true;
+                }
                 writeUnauthorized(response, "token类型错误！");
                 return false;
             }
@@ -51,9 +60,21 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
             request.setAttribute("account", jwtUtil.getAccount(claims));
             return true;
         } catch (JwtException | IllegalArgumentException e) {
+            if (optionalLogin) {
+                return true;
+            }
             writeUnauthorized(response, "token无效或已过期！");
             return false;
         }
+    }
+
+    private boolean isOptionalLogin(Object handler) {
+        if (!(handler instanceof HandlerMethod)) {
+            return false;
+        }
+        HandlerMethod handlerMethod = (HandlerMethod) handler;
+        return handlerMethod.hasMethodAnnotation(OptionalLogin.class)
+                || handlerMethod.getBeanType().isAnnotationPresent(OptionalLogin.class);
     }
 
     private void writeUnauthorized(HttpServletResponse response, String msg) throws IOException {
@@ -65,4 +86,3 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
         ));
     }
 }
-

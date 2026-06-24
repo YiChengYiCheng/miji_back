@@ -6,6 +6,7 @@ import com.common.QO.note.NoteDetailQO;
 import com.common.QO.note.NoteListQO;
 import com.common.QO.note.UpdateNoteQO;
 import com.common.result.Result;
+import com.miji.annotation.OptionalLogin;
 import com.miji.core.note.service.NoteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -39,11 +40,13 @@ public class NoteController {
     }
 
     @PostMapping("/detail")
+    @OptionalLogin
     public Result detail(@RequestBody @Valid NoteDetailQO qo, HttpServletRequest request) {
         return noteService.detail(qo, getUserId(request));
     }
 
     @PostMapping("/list")
+    @OptionalLogin
     public Result list(@RequestBody(required = false) NoteListQO qo, HttpServletRequest request) {
         return noteService.list(qo, getUserId(request));
     }

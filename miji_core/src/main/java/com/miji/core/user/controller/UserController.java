@@ -3,6 +3,7 @@ package com.miji.core.user.controller;
 import com.common.QO.user.LoginQO;
 import com.common.QO.user.RegisterQO;
 import com.common.QO.user.RefreshTokenQO;
+import com.common.QO.user.UpdateUserQO;
 import com.common.result.Result;
 import com.miji.core.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,11 @@ public class UserController {
     @GetMapping("/detail")
     public Result detail(@RequestParam Long userId, HttpServletRequest request) {
         return userService.detail(userId, getUserId(request));
+    }
+
+    @PostMapping("/update")
+    public Result update(@RequestBody @Valid UpdateUserQO qo, HttpServletRequest request) {
+        return userService.update(qo, getUserId(request));
     }
 
     private Long getUserId(HttpServletRequest request) {

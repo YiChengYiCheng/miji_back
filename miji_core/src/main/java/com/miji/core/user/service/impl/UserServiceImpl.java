@@ -7,6 +7,7 @@ import com.common.DO.UserDO;
 import com.common.QO.user.LoginQO;
 import com.common.QO.user.RegisterQO;
 import com.common.QO.user.RefreshTokenQO;
+import com.common.QO.user.UpdateUserQO;
 import com.common.VO.user.TokenVO;
 import com.common.VO.user.UserDetailVO;
 import com.common.VO.user.UserVO;
@@ -152,6 +153,32 @@ public class UserServiceImpl implements UserService {
         UserDO userDO = getActiveUser(userId);
         boolean followed = !currentUserId.equals(userId) && existsFollow(currentUserId, userId);
         return Result.success(buildUserDetailVO(userDO, followed));
+    }
+
+    @Override
+    public Result update(UpdateUserQO qo, Long currentUserId) {
+        checkLoginUser(currentUserId);
+        UserDO userDO = getActiveUser(currentUserId);
+
+        if (qo.getNickname() != null) {
+            if (qo.getNickname().trim().isEmpty()) {
+                throw new CustomException(HttpServletResponse.SC_BAD_REQUEST, "nickname can not be empty");
+            }
+            userDO.setNickname(qo.getNickname().trim());
+        }
+        if (qo.getAvatar() != null) {
+            userDO.setAvatar(qo.getAvatar());
+        }
+        if (qo.getBio() != null) {
+            userDO.setBio(qo.getBio());
+        }
+        userDO.setUpdateTime(LocalDateTime.now());
+
+        int update = userMapper.updateById(userDO);
+        if (update <= 0) {
+            return Result.fail(CodeEnum.CUSTOM_DATABASE_ERROR_UPDATE_FAIL.getStatusCode(), "user update fail");
+        }
+        return Result.success(buildUserDetailVO(userDO, false));
     }
 
     private void checkLoginUser(Long currentUserId) {

@@ -5,6 +5,7 @@ import com.common.QO.comment.CommentListQO;
 import com.common.QO.comment.CommentReplyListQO;
 import com.common.QO.comment.DeleteCommentQO;
 import com.common.result.Result;
+import com.miji.annotation.OptionalLogin;
 import com.miji.core.comment.service.CommentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,6 +34,7 @@ public class CommentController {
     }
 
     @PostMapping("/list")
+    @OptionalLogin
     public Result list(@RequestBody @Valid CommentListQO qo, HttpServletRequest request) {
         return commentService.list(qo, getUserId(request));
     }
